@@ -85,12 +85,16 @@ func TestMutipleWX(t *testing.T) {
 			So(len(rets), ShouldEqual, 1)
 			So(wx.Get(rets[0].ID), ShouldEqual, "a")
 		})
-		Convey("ab PredictiveMatch returns a abc abe", func() {
+		Convey("ab PredictiveMatch returns abc abe", func() {
 			ids := wx.PredictiveMatch("ab")
-			So(len(ids), ShouldEqual, 3)
-			So(wx.Get(ids[0]), ShouldEqual, "a")
-			So(wx.Get(ids[1]), ShouldEqual, "abc")
-			So(wx.Get(ids[2]), ShouldEqual, "abe")
+			So(len(ids), ShouldEqual, 2)
+			So(wx.Get(ids[0]), ShouldEqual, "abc")
+			So(wx.Get(ids[1]), ShouldEqual, "abe")
+		})
+		Convey("ab PredictiveMatchWithLimit returns a abc", func() {
+			ids := wx.PredictiveMatchWithLimit("ab", 1)
+			So(len(ids), ShouldEqual, 1)
+			So(wx.Get(ids[0]), ShouldEqual, "abc")
 		})
 		Convey("MarshalBinary", func() {
 			out, err := wx.MarshalBinary()

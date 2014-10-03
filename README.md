@@ -50,12 +50,11 @@ for _, r := range rets {
 // in
 // inn
 
-// Predictivematch(str) returns all the keys whose prefix matches to str
+// Predictivematch(str) returns all the keys whose strict prefix matches to str
 ids := w.PredictiveMatch("i")
 for _ id := range ids {
 	fmt.Printf("%s\n", w.Get(id))
 }
-// i
 // in
 // inn
 

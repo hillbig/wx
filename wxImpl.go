@@ -135,13 +135,6 @@ func (wx wxImpl) PredictiveMatchWithLimit(str string, limit uint64) (ids []uint6
 				break
 			}
 		}
-		ok, id := wx.terminals.BitAndRank(nodeind)
-		if ok {
-			ids = append(ids, id)
-			if uint64(len(ids)) == limit {
-				return
-			}
-		}
 		if strind == strlen {
 			break
 		}
@@ -168,6 +161,9 @@ func (wx wxImpl) enumerateDescendant(nodeind uint64, limit uint64, ids *[]uint64
 	offset, l := wx.branches.OffsetAndLen(nodeind)
 	for i := uint64(0); i < l; i++ {
 		wx.enumerateDescendant(offset+i+1, limit, ids)
+		if uint64(len(*ids)) == limit {
+			break
+		}
 	}
 }
 
@@ -241,34 +237,42 @@ func (wx *wxImpl) UnmarshalBinary(in []byte) (err error) {
 	dec := codec.NewDecoder(r, &bh)
 	err = dec.Decode(&wx.branches)
 	if err != nil {
+		fmt.Printf("b\n")
 		return
 	}
 	err = dec.Decode(&wx.terminals)
 	if err != nil {
+		fmt.Printf("t\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingIDs)
 	if err != nil {
+		fmt.Printf("l\n")
 		return
 	}
 	err = dec.Decode(&wx.leadings)
 	if err != nil {
+		fmt.Printf("l2\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingIsZeroOrOnes)
 	if err != nil {
+		fmt.Printf("l3\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingIsOnes)
 	if err != nil {
+		fmt.Printf("l4\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingOnes)
 	if err != nil {
+		fmt.Printf("l5\n")
 		return
 	}
 	err = dec.Decode(&wx.num)
 	if err != nil {
+		fmt.Printf("num\n")
 		return
 	}
 	return nil
