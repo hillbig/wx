@@ -91,6 +91,14 @@ func TestMutipleWX(t *testing.T) {
 			So(wx.Get(ids[0]), ShouldEqual, "abc")
 			So(wx.Get(ids[1]), ShouldEqual, "abe")
 		})
+		Convey("ab PredictiveMatchWithLimit 0 returns nothing", func() {
+			ids := wx.PredictiveMatchWithLimit("ab", 0)
+			So(len(ids), ShouldEqual, 0)
+		})
+		Convey("ac PredictiveMatchWithLimit 3 returns nothing", func() {
+			ids := wx.PredictiveMatch("ac")
+			So(len(ids), ShouldEqual, 0)
+		})
 		Convey("ab PredictiveMatchWithLimit returns a abc", func() {
 			ids := wx.PredictiveMatchWithLimit("ab", 1)
 			So(len(ids), ShouldEqual, 1)
@@ -108,6 +116,51 @@ func TestMutipleWX(t *testing.T) {
 			So(newwx.Get(rets[0].ID), ShouldEqual, "a")
 			So(newwx.Get(rets[1].ID), ShouldEqual, "abc")
 		})
+	})
+}
+
+func TestMarshallingWX(t *testing.T) {
+	num := 1000000
+	maxLen := 10
+	testNum := 1000
+	wxb := NewBuilder()
+	totalLen := 0
+	strs := make(map[string]struct{})
+	for i := 0; i < num; i++ {
+		l := rand.Int() % maxLen
+		strbuf := make([]byte, l)
+		for j := 0; j < l; j++ {
+			strbuf[j] = byte(rand.Int() % 4)
+		}
+		totalLen += l
+		s := string(strbuf)
+		strs[s] = struct{}{}
+		wxb.Add(s)
+	}
+	w := wxb.Build()
+	//w.debugPrint()
+	Convey("When random vector is set", t, func() {
+		So(w.Num(), ShouldEqual, uint64(len(strs)))
+		for i := 0; i < testNum; i++ {
+			ind := uint64(rand.Int31n(int32(w.Num())))
+			s := w.Get(uint64(ind))
+			_, ok := strs[s]
+			So(ok, ShouldBeTrue)
+		}
+	})
+	Convey("When large strings are set", t, func() {
+		out, err := w.MarshalBinary()
+		So(err, ShouldBeNil)
+		wxnew := New()
+		err = wxnew.UnmarshalBinary(out)
+		So(err, ShouldBeNil)
+		So(wxnew.Num(), ShouldEqual, uint64(len(strs)))
+		for i := 0; i < testNum; i++ {
+			ind := uint64(rand.Int31n(int32(wxnew.Num())))
+			s := wxnew.Get(uint64(ind))
+			_, ok := strs[s]
+			So(ok, ShouldBeTrue)
+		}
 	})
 }
 

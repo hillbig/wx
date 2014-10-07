@@ -1,7 +1,6 @@
 package wx
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 
@@ -84,7 +83,9 @@ func (wx wxImpl) getLeading(nodeind uint64) string {
 	if isZeroOrOne {
 		isOne, rank := wx.leadingIsOnes.BitAndRank(rank)
 		if isOne {
-			return string(wx.leadingOnes[rank])
+			s := make([]byte, 1)
+			s[0] = wx.leadingOnes[rank]
+			return string(s)
 		} else {
 			return ""
 		}
@@ -176,15 +177,17 @@ func (wx wxImpl) Get(id uint64) string {
 		if nodeind == 0 {
 			break
 		}
-		strs = append(strs, string(wx.branches.GetByte(nodeind-1)))
+		s := make([]byte, 1)
+		s[0] = wx.branches.GetByte(nodeind - 1)
+		strs = append(strs, string(s))
 		nodeind = wx.branches.IthCharInd(nodeind)
 	}
 
-	var buffer bytes.Buffer
+	ret := make([]byte, 0)
 	for i := len(strs) - 1; i >= 0; i-- {
-		buffer.WriteString(strs[i])
+		ret = append(ret, []byte(strs[i])...)
 	}
-	return buffer.String()
+	return string(ret)
 }
 
 func (wx wxImpl) Num() uint64 {
@@ -192,9 +195,8 @@ func (wx wxImpl) Num() uint64 {
 }
 
 func (wx wxImpl) MarshalBinary() (out []byte, err error) {
-	w := new(bytes.Buffer)
-	var bh codec.BincHandle
-	enc := codec.NewEncoder(w, &bh)
+	var bh codec.MsgpackHandle
+	enc := codec.NewEncoderBytes(&out, &bh)
 	err = enc.Encode(wx.branches)
 	if err != nil {
 		return
@@ -227,52 +229,42 @@ func (wx wxImpl) MarshalBinary() (out []byte, err error) {
 	if err != nil {
 		return
 	}
-	out = w.Bytes()
 	return
 }
 
 func (wx *wxImpl) UnmarshalBinary(in []byte) (err error) {
-	r := bytes.NewBuffer(in)
-	var bh codec.BincHandle
-	dec := codec.NewDecoder(r, &bh)
+	var bh codec.MsgpackHandle
+	dec := codec.NewDecoderBytes(in, &bh)
 	err = dec.Decode(&wx.branches)
 	if err != nil {
-		fmt.Printf("b\n")
 		return
 	}
 	err = dec.Decode(&wx.terminals)
 	if err != nil {
-		fmt.Printf("t\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingIDs)
 	if err != nil {
-		fmt.Printf("l\n")
 		return
 	}
 	err = dec.Decode(&wx.leadings)
 	if err != nil {
-		fmt.Printf("l2\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingIsZeroOrOnes)
 	if err != nil {
-		fmt.Printf("l3\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingIsOnes)
 	if err != nil {
-		fmt.Printf("l4\n")
 		return
 	}
 	err = dec.Decode(&wx.leadingOnes)
 	if err != nil {
-		fmt.Printf("l5\n")
 		return
 	}
 	err = dec.Decode(&wx.num)
 	if err != nil {
-		fmt.Printf("num\n")
 		return
 	}
 	return nil
@@ -282,7 +274,12 @@ func debugPrintVecString(name string, vs vecstring.VecString) {
 	fmt.Printf("%s num=%d\n", name, vs.Num())
 	num := vs.Num()
 	for i := uint64(0); i < num; i++ {
-		fmt.Printf("%d %s\n", i, vs.Get(i))
+		s := vs.Get(i)
+		fmt.Printf("%d:", i)
+		for j := 0; j < len(s); j++ {
+			fmt.Printf("%d ", uint8(s[j]))
+		}
+		fmt.Printf("\n")
 	}
 }
 
@@ -311,7 +308,7 @@ func debugPrintFixVec(name string, fv fixvec.FixVec) {
 func debugPrintBytes(name string, bytes []byte) {
 	fmt.Printf("%s num=%d\n", name, len(bytes))
 	for _, v := range bytes {
-		fmt.Printf("%s", string(v))
+		fmt.Printf("%d ", v)
 	}
 	fmt.Printf("\n")
 }

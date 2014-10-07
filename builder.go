@@ -1,6 +1,7 @@
 package wx
 
 import (
+	"fmt"
 	"github.com/hillbig/fixvec"
 	"github.com/hillbig/rsdic"
 	"github.com/hillbig/vecstring"
@@ -58,17 +59,63 @@ func (wxb *builderImpl) build(isRawLead bool) WX {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	wxtmp := wxBuilderTmp{
-		keys:                keys,
-		branches:            vecstring.NewForWX(),
-		terminals:           rsdic.New(),
-		leadingIsZeroOrOnes: rsdic.New(),
-		leadingIsOnes:       rsdic.New(),
-		leadingOnes:         make([]byte, 0),
-		leadingStrs:         newStrs(),
-	}
+	branches := vecstring.NewForWX()
+	terminals := rsdic.New()
+	leadingIsZeroOrOnes := rsdic.New()
+	leadingIsOnes := rsdic.New()
+	leadingOnes := make([]byte, 0)
+	leadingStrs := newStrs()
+
+	q := newNodeQueue(0)
 	if len(keys) > 0 {
-		wxtmp.bfs(state{0, len(keys), 0})
+		q.push(&node{0, len(keys), 0})
+	}
+	for q.num > 0 {
+		n := q.pop()
+		beg, end, depth := n.beg, n.end, n.depth
+		bdepth := branchDepth(keys[beg], keys[end-1], depth)
+		leading := keys[beg][depth:bdepth]
+		if len(leading) <= 1 {
+			leadingIsZeroOrOnes.PushBack(true)
+			if len(leading) == 0 {
+				leadingIsOnes.PushBack(false)
+			} else {
+				// len(leading) == 1
+				leadingIsOnes.PushBack(true)
+				leadingOnes = append(leadingOnes, leading[0])
+			}
+		} else {
+			leadingIsZeroOrOnes.PushBack(false)
+			leadingStrs.add(leading)
+		}
+		if len(keys[beg]) == bdepth {
+			// keys[beg] is internal node
+			terminals.PushBack(true)
+			beg++
+			if beg == end {
+				branches.PushBack("")
+				continue
+			}
+		} else {
+			terminals.PushBack(false)
+		}
+
+		nextBeg := beg
+		c := keys[nextBeg][bdepth]
+		branch := make([]byte, 0)
+		// QUEUEUEU
+		for i := beg + 1; i <= end; i++ {
+			if i == end || c != keys[i][bdepth] {
+				branch = append(branch, c)
+				q.push(&node{nextBeg, i, bdepth + 1})
+				if i == end {
+					break
+				}
+				nextBeg = i
+				c = keys[i][bdepth]
+			}
+		}
+		branches.PushBack(string(branch))
 	}
 
 	// build trie for leadings recursively
@@ -86,103 +133,40 @@ func (wxb *builderImpl) build(isRawLead bool) WX {
 			}
 		} else {
 	*/
-	id2key := make([]string, len(wxtmp.leadingStrs.str2id))
-	for key, id := range wxtmp.leadingStrs.str2id {
+	id2key := make([]string, len(leadingStrs.str2id))
+	for key, id := range leadingStrs.str2id {
 		id2key[id] = key
 	}
-	leadingRaws := vecstring.New()
+	leadings := vecstring.New()
 	for _, key := range id2key {
-		leadingRaws.PushBack(key)
+		leadings.PushBack(key)
 	}
 	return &wxImpl{
-		branches:            wxtmp.branches,
-		terminals:           wxtmp.terminals,
-		leadingIDs:          fixvec.NewFromArray(wxtmp.leadingStrs.ids),
-		leadings:            leadingRaws,
-		leadingIsZeroOrOnes: wxtmp.leadingIsZeroOrOnes,
-		leadingIsOnes:       wxtmp.leadingIsOnes,
-		leadingOnes:         wxtmp.leadingOnes,
+		branches:            branches,
+		terminals:           terminals,
+		leadingIDs:          fixvec.NewFromArray(leadingStrs.ids),
+		leadings:            leadings,
+		leadingIsZeroOrOnes: leadingIsZeroOrOnes,
+		leadingIsOnes:       leadingIsOnes,
+		leadingOnes:         leadingOnes,
 		num:                 uint64(len(keys)),
 	}
-	/*
-		}
-	*/
 }
 
-type wxBuilderTmp struct {
-	keys                []string
-	branches            vecstring.VecStringForWX
-	leadingStrs         *strs
-	leadingIsZeroOrOnes rsdic.RSDic
-	leadingIsOnes       rsdic.RSDic
-	leadingOnes         []byte
-	terminals           rsdic.RSDic
+func printString(s string) {
+	for i := 0; i < len(s); i++ {
+		fmt.Printf("%x ", s[i])
+	}
+	fmt.Printf("\n")
 }
 
 func branchDepth(s string, u string, depth int) int {
 	for i := depth; ; i++ {
-		if len(s) == i || len(u) == i { // since keys are sorted, len(s) == i only hold. But added len(u) in case.
+		if len(s) == i || len(u) == i { // since keys are sorted, only len(s) == i should be valid. But added len(u) in case.
 			return i
 		}
 		if s[i] != u[i] {
 			return i
 		}
 	}
-}
-
-func (wxtmp *wxBuilderTmp) bfs(s state) {
-	beg, end, depth := s.beg, s.end, s.depth
-	keys := wxtmp.keys
-	bdepth := branchDepth(keys[beg], keys[end-1], depth)
-	leading := keys[beg][depth:bdepth]
-	if len(leading) <= 1 {
-		wxtmp.leadingIsZeroOrOnes.PushBack(true)
-		if len(leading) == 0 {
-			wxtmp.leadingIsOnes.PushBack(false)
-		} else {
-			// len(leading) == 0
-			wxtmp.leadingOnes = append(wxtmp.leadingOnes, leading[0])
-			wxtmp.leadingIsOnes.PushBack(true)
-		}
-	} else {
-		wxtmp.leadingIsZeroOrOnes.PushBack(false)
-		wxtmp.leadingStrs.add(leading)
-	}
-	if len(keys[beg]) == bdepth {
-		// keys[beg] is internal node
-		wxtmp.terminals.PushBack(true)
-		beg++
-		if beg == end {
-			wxtmp.branches.PushBack("")
-			return
-		}
-	} else {
-		wxtmp.terminals.PushBack(false)
-	}
-
-	nextBeg := beg
-	c := keys[nextBeg][bdepth]
-	branch := make([]byte, 0)
-	nextBFS := make([]state, 0)
-	for i := beg + 1; i <= end; i++ {
-		if i == end || c != keys[i][bdepth] {
-			branch = append(branch, c)
-			nextBFS = append(nextBFS, state{nextBeg, i, bdepth + 1})
-			if i == end {
-				break
-			}
-			nextBeg = i
-			c = keys[i][bdepth]
-		}
-	}
-	wxtmp.branches.PushBack(string(branch))
-	for _, s := range nextBFS {
-		wxtmp.bfs(s)
-	}
-}
-
-type state struct {
-	beg   int
-	end   int
-	depth int
 }
