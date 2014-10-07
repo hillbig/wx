@@ -103,7 +103,6 @@ func (wxb *builderImpl) build(isRawLead bool) WX {
 		nextBeg := beg
 		c := keys[nextBeg][bdepth]
 		branch := make([]byte, 0)
-		// QUEUEUEU
 		for i := beg + 1; i <= end; i++ {
 			if i == end || c != keys[i][bdepth] {
 				branch = append(branch, c)
@@ -117,22 +116,6 @@ func (wxb *builderImpl) build(isRawLead bool) WX {
 		}
 		branches.PushBack(string(branch))
 	}
-
-	// build trie for leadings recursively
-	/*
-		if !isRawLead {
-			leadBuilder := builderImpl{make(map[string]struct{})}
-			for key, _ := range wxtmp.leadingStrs.str2id {
-				leadBuilder.Add(key)
-			}
-			return &wxImpl{
-				branches:  wxtmp.branches.Build(),
-				terminals: wxtmp.terminals.Build(),
-				leadings:  leadBuilder.Build(),
-				num:       uint64(len(keys)),
-			}
-		} else {
-	*/
 	id2key := make([]string, len(leadingStrs.str2id))
 	for key, id := range leadingStrs.str2id {
 		id2key[id] = key
