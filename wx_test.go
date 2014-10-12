@@ -119,10 +119,50 @@ func TestMutipleWX(t *testing.T) {
 	})
 }
 
+func TestFailedWX(t *testing.T) {
+	m := map[string]struct{}{
+		"https://api.github.com/repos/RostovTeam/hackaton/issues/events{/number}":                               struct{}{},
+		"https://api.github.com/repos/slickage/rate-limiter/issues/events{/number}":                             struct{}{},
+		"https://api.github.com/repos/ConsultingMD/blog/issues/events{/number}":                                 struct{}{},
+		"https://api.github.com/repos/OULibraries/bootstrap_subtheme_mdw/issues/events{/number}":                struct{}{},
+		"https://api.github.com/repos/VioletGrey/spree_gift_message/issues/events{/number}":                     struct{}{},
+		"https://api.github.com/repos/LumenData/AlgorithmsIO-Streaming-Examples/issues/events{/number}":         struct{}{},
+		"https://api.github.com/repos/mulesoft/template-sfdc2sfdc-opportunity-migration/issues/events{/number}": struct{}{},
+		"https://api.github.com/repos/RealScout/angular-leaflet-directive/issues/events{/number}":               struct{}{},
+		"https://api.github.com/repos/engineyard/pundit/issues/events{/number}":                                 struct{}{},
+		"https://api.github.com/repos/puppetlabs/csr-generator/issues/events{/number}":                          struct{}{},
+		"https://api.github.com/repos/keradgames/keradbot/issues/events{/number}":                               struct{}{},
+		"https://api.github.com/repos/DogFoodSoftware/test-repo/issues/events{/number}":                         struct{}{},
+		"https://api.github.com/repos/pluspole/PlainText/issues/events{/number}":                                struct{}{},
+		"https://api.github.com/repos/USU-Robosub/mk-proto/issues/events{/number}":                              struct{}{},
+		"https://api.github.com/repos/AgreeMates/AgreeMates.github.io/issues/events{/number}":                   struct{}{},
+		"https://api.github.com/repos/OffTempo/offtempoV4/issues/events{/number}":                               struct{}{},
+		"https://api.github.com/repos/AgreeMates/AgreeMates/issues/events{/number}":                             struct{}{},
+		"https://api.github.com/repos/colonyamerican/node-googlemaps/issues/events{/number}":                    struct{}{},
+		"https://api.github.com/repos/mulesoft/template-sfdc2sfdc-account-broadcast/issues/events{/number}":     struct{}{},
+		"https://api.github.com/repos/mulesoft/template-sfdc2sfdc-contact-aggregation/issues/events{/number}":   struct{}{},
+		"https://api.github.com/repos/pbdesk/EntityFramework.HandsOn/issues/events{/number}":                    struct{}{},
+		"https://api.github.com/repos/godaddy/node-soap-client-utils/issues/events{/number}":                    struct{}{},
+		"https://api.github.com/repos/FlorianSoftware/SmartApps-Open/issues/events{/number}":                    struct{}{},
+	}
+	b := NewBuilder()
+	for str, _ := range m {
+		b.Add(str)
+	}
+	w := b.Build()
+	Convey("When a random string is generated", t, func() {
+		for str, _ := range m {
+			ws, ok := w.LongestPrefixMatch(str)
+			So(ok, ShouldBeTrue)
+			So(ws.Len, ShouldEqual, len(str))
+		}
+	})
+}
+
 func TestMarshallingWX(t *testing.T) {
 	num := 1000000
 	maxLen := 10
-	testNum := 1000
+	testNum := 10
 	wxb := NewBuilder()
 	totalLen := 0
 	strs := make(map[string]struct{})
@@ -138,8 +178,12 @@ func TestMarshallingWX(t *testing.T) {
 		wxb.Add(s)
 	}
 	w := wxb.Build()
-	//w.debugPrint()
-	Convey("When random vector is set", t, func() {
+
+	strarray := make([]string, 0)
+	for str, _ := range strs {
+		strarray = append(strarray, str)
+	}
+	Convey("When Get is examined", t, func() {
 		So(w.Num(), ShouldEqual, uint64(len(strs)))
 		for i := 0; i < testNum; i++ {
 			ind := uint64(rand.Int31n(int32(w.Num())))
@@ -148,6 +192,16 @@ func TestMarshallingWX(t *testing.T) {
 			So(ok, ShouldBeTrue)
 		}
 	})
+	Convey("When LongestPrefixMatch is examined", t, func() {
+		So(w.Num(), ShouldEqual, uint64(len(strs)))
+		for i := 0; i < testNum; i++ {
+			ind := uint64(rand.Int31n(int32(w.Num())))
+			ws, ok := w.LongestPrefixMatch(strarray[ind])
+			So(ok, ShouldBeTrue)
+			So(ws.Len, ShouldEqual, len(strarray[ind]))
+		}
+	})
+
 	Convey("When large strings are set", t, func() {
 		out, err := w.MarshalBinary()
 		So(err, ShouldBeNil)

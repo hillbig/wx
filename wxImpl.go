@@ -275,11 +275,7 @@ func debugPrintVecString(name string, vs vecstring.VecString) {
 	num := vs.Num()
 	for i := uint64(0); i < num; i++ {
 		s := vs.Get(i)
-		fmt.Printf("%d:", i)
-		for j := 0; j < len(s); j++ {
-			fmt.Printf("%d ", uint8(s[j]))
-		}
-		fmt.Printf("\n")
+		fmt.Printf("%d:%s\n", i, s)
 	}
 }
 
@@ -308,7 +304,7 @@ func debugPrintFixVec(name string, fv fixvec.FixVec) {
 func debugPrintBytes(name string, bytes []byte) {
 	fmt.Printf("%s num=%d\n", name, len(bytes))
 	for _, v := range bytes {
-		fmt.Printf("%d ", v)
+		fmt.Printf("%c ", v)
 	}
 	fmt.Printf("\n")
 }
