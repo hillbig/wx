@@ -3,6 +3,9 @@ wx
 
 wx is a Go library for a succint representation of trie
 
+NOTE: wx is not stable yet. please use this for research only, and DON'T use this for production.
+I hope that this will be stable soon.
+
 wx stores a set of strings, and supports PrefixMatch and PredictiveMatch operations.
 Each string is assigned to an unique ID from [0, num), and a user can retrieve a string
 from ID using Get() method.
