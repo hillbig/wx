@@ -159,7 +159,7 @@ func (wx wxImpl) enumerateDescendant(nodeind uint64, limit uint64, ids *[]uint64
 			return
 		}
 	}
-	offset, l := wx.branches.OffsetAndLen(nodeind)
+	l, offset := wx.branches.LenAndOffset(nodeind)
 	for i := uint64(0); i < l; i++ {
 		wx.enumerateDescendant(offset+i+1, limit, ids)
 		if uint64(len(*ids)) == limit {
@@ -180,7 +180,7 @@ func (wx wxImpl) Get(id uint64) string {
 		s := make([]byte, 1)
 		s[0] = wx.branches.GetByte(nodeind - 1)
 		strs = append(strs, string(s))
-		nodeind = wx.branches.IthCharInd(nodeind)
+		nodeind = wx.branches.IthCharInd(nodeind - 1)
 	}
 
 	ret := make([]byte, 0)
